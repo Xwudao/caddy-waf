@@ -3,6 +3,7 @@ package waf
 import (
 	"net"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/caddyserver/caddy/v2"
@@ -20,6 +21,10 @@ type CaddyWaf struct {
 	RateLimitBucket int
 	RateLimitRate   float64
 	rateLimit       *RateLimit
+
+	ArgsReRule      []*regexp.Regexp
+	UserAgentReRule []*regexp.Regexp
+	PostReRule      []*regexp.Regexp
 }
 
 func init() {
@@ -71,21 +76,11 @@ func (w *CaddyWaf) ServeHTTP(rw http.ResponseWriter, r *http.Request, next caddy
 	return next.ServeHTTP(rw, r)
 }
 
-//func (w *CaddyWaf) getRemoteIp(r *http.Request) string {
-//	// first use x-forwarded-for
-//
-//	i := strings.Index(r.RemoteAddr, ":")
-//	if i < 1 {
-//		return r.RemoteAddr
-//	}
-//	return r.RemoteAddr[:i]
-//}
-
 // getRequestIP 获取请求的 IP 地址
 func (w *CaddyWaf) getRequestIP(r *http.Request) string {
 	// 优先尝试从 X-Forwarded-For 头部获取 IP 地址
 	ip := r.Header.Get("X-Forwarded-For")
-	w.logger.Info("X-Forwarded-For: " + ip)
+
 	if ip != "" {
 		// X-Forwarded-For 可能包含多个 IP 地址，用逗号分隔，取第一个
 		ips := strings.Split(ip, ",")

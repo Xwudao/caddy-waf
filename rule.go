@@ -5,28 +5,70 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"os"
 	"regexp"
+
+	"go.uber.org/zap"
 )
 
 func (w *CaddyWaf) loadArgsRule(rulePath string) error {
 	var err error
 	w.ArgsRule, err = loadRule(rulePath)
+
+	if len(w.ArgsRule) > 0 {
+		var res []*regexp.Regexp
+		for _, rule := range w.ArgsRule {
+			reg, err := regexp.Compile(rule)
+			if err != nil {
+				continue
+			}
+			res = append(res, reg)
+		}
+		w.logger.Info("args rule", zap.Int("total", len(res)))
+		w.ArgsReRule = res
+	}
+
 	return err
 }
 
 func (w *CaddyWaf) loadPostRule(rulePath string) error {
 	var err error
 	w.PostRule, err = loadRule(rulePath)
+
+	if len(w.PostRule) > 0 {
+		var res []*regexp.Regexp
+		for _, rule := range w.PostRule {
+			reg, err := regexp.Compile(rule)
+			if err != nil {
+				continue
+			}
+			res = append(res, reg)
+		}
+		w.logger.Info("post rule", zap.Int("total", len(res)))
+		w.PostReRule = res
+	}
 	return err
 }
 
 func (w *CaddyWaf) loadUserAgentRule(rulePath string) error {
 	var err error
 	w.UserAgentRule, err = loadRule(rulePath)
+
+	if len(w.UserAgentRule) > 0 {
+		var res []*regexp.Regexp
+		for _, rule := range w.UserAgentRule {
+			reg, err := regexp.Compile(rule)
+			if err != nil {
+				continue
+			}
+			res = append(res, reg)
+		}
+		w.logger.Info("user agent rule", zap.Int("total", len(res)))
+		w.UserAgentReRule = res
+	}
 	return err
 }
 
@@ -83,11 +125,7 @@ func (w *CaddyWaf) detectIp(ipAddr string, isBlock bool) bool {
 
 // detectRequestArgs
 func (w *CaddyWaf) detectRequestArgs(r *http.Request) bool {
-	for _, rule := range w.ArgsRule {
-		reg, err := regexp.Compile(rule)
-		if err != nil {
-			continue
-		}
+	for _, reg := range w.ArgsReRule {
 		if reg.MatchString(r.RequestURI) {
 			return true
 		}
@@ -103,19 +141,15 @@ func (w *CaddyWaf) detectRequestBody(r *http.Request) bool {
 		return false
 	}
 
-	body, _ := ioutil.ReadAll(r.Body)
+	body, _ := io.ReadAll(r.Body)
 	r.Body.Close() //  must close
-	r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+	r.Body = io.NopCloser(bytes.NewBuffer(body))
 
 	if len(body) == 0 {
 		return false
 	}
 
-	for _, rule := range w.PostRule {
-		reg, err := regexp.Compile(rule)
-		if err != nil {
-			continue
-		}
+	for _, reg := range w.PostReRule {
 		if reg.MatchString(string(body)) {
 			return true
 		}
@@ -126,12 +160,7 @@ func (w *CaddyWaf) detectRequestBody(r *http.Request) bool {
 // detectUserAgent
 func (w *CaddyWaf) detectUserAgent(r *http.Request) bool {
 	userAgent := r.UserAgent()
-	for _, rule := range w.UserAgentRule {
-		reg, err := regexp.Compile(rule)
-		if err != nil {
-			continue
-		}
-
+	for _, reg := range w.UserAgentReRule {
 		if reg.MatchString(userAgent) {
 			return true
 		}
