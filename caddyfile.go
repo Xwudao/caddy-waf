@@ -1,17 +1,18 @@
 package waf
 
 import (
+	"strconv"
+
 	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
 	"github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
-	"strconv"
 )
 
 func init() {
 	httpcaddyfile.RegisterHandlerDirective("waf", parseCaddyfile)
 }
 
-// UnmarshalCaddyfile
+// UnmarshalCaddyfile sets up the middleware from Caddyfile tokens. Syntax:
 func (w *CaddyWaf) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 	d.NextArg()
 	var err error
@@ -49,11 +50,11 @@ func (w *CaddyWaf) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 // parseCaddyfile unmarshals tokens from h into a new Middleware.
 // syntax:
 //
-//    waf {
-//        args_rule             <path>
-//        body_rule             <path>
-//        user_agent_rule       <path>
-//    }
+//	waf {
+//	    args_rule             <path>
+//	    body_rule             <path>
+//	    user_agent_rule       <path>
+//	}
 func parseCaddyfile(h httpcaddyfile.Helper) (caddyhttp.MiddlewareHandler, error) {
 	var t CaddyWaf
 	err := t.UnmarshalCaddyfile(h.Dispenser)

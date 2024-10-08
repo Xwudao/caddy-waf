@@ -1,3 +1,3 @@
 package waf
 
-const defaultWafTemplate =`Intercept illegal requests`
+const defaultWafTemplate = `Intercept illegal requests`

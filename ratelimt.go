@@ -1,11 +1,12 @@
 package waf
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/patrickmn/go-cache"
 	"go.uber.org/zap"
 	"golang.org/x/time/rate"
-	"net/http"
-	"time"
 )
 
 type RateLimit struct {
