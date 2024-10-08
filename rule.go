@@ -10,8 +10,6 @@ import (
 	"net/http"
 	"os"
 	"regexp"
-
-	"go.uber.org/zap"
 )
 
 func (w *CaddyWaf) loadArgsRule(rulePath string) error {
@@ -27,7 +25,6 @@ func (w *CaddyWaf) loadArgsRule(rulePath string) error {
 			}
 			res = append(res, reg)
 		}
-		w.logger.Info("args rule", zap.Int("total", len(res)))
 		w.ArgsReRule = res
 	}
 
@@ -47,7 +44,6 @@ func (w *CaddyWaf) loadPostRule(rulePath string) error {
 			}
 			res = append(res, reg)
 		}
-		w.logger.Info("post rule", zap.Int("total", len(res)))
 		w.PostReRule = res
 	}
 	return err
@@ -66,7 +62,6 @@ func (w *CaddyWaf) loadUserAgentRule(rulePath string) error {
 			}
 			res = append(res, reg)
 		}
-		w.logger.Info("user agent rule", zap.Int("total", len(res)))
 		w.UserAgentReRule = res
 	}
 	return err
