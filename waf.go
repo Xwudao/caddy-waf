@@ -58,9 +58,14 @@ func (w *CaddyWaf) ServeHTTP(rw http.ResponseWriter, r *http.Request, next caddy
 	if w.detectIp(remoteAddr, true) ||
 		w.detectRequestArgs(r) ||
 		w.detectRequestBody(r) ||
-		w.detectUserAgent(r) ||
-		w.rateLimit.detect(remoteAddr, r) {
+		w.detectUserAgent(r) {
 		return w.redirectIntercept(rw)
+	}
+
+	if w.RateLimitBucket > 0 {
+		if w.rateLimit.detect(remoteAddr, r) {
+			return w.redirectIntercept(rw)
+		}
 	}
 
 	return next.ServeHTTP(rw, r)
@@ -80,6 +85,7 @@ func (w *CaddyWaf) ServeHTTP(rw http.ResponseWriter, r *http.Request, next caddy
 func (w *CaddyWaf) getRequestIP(r *http.Request) string {
 	// 优先尝试从 X-Forwarded-For 头部获取 IP 地址
 	ip := r.Header.Get("X-Forwarded-For")
+	w.logger.Info("X-Forwarded-For: " + ip)
 	if ip != "" {
 		// X-Forwarded-For 可能包含多个 IP 地址，用逗号分隔，取第一个
 		ips := strings.Split(ip, ",")
